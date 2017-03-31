@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Sorting-example.iml" filepath="$PROJECT_DIR$/.idea/modules/Sorting-example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Sorting-example_main.iml" filepath="$PROJECT_DIR$/.idea/modules/Sorting-example_main.iml" group="Sorting-example" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Sorting-example_test.iml" filepath="$PROJECT_DIR$/.idea/modules/Sorting-example_test.iml" group="Sorting-example" />
+    </modules>
+  </component>
+</project>
