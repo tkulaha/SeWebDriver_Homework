@@ -3,10 +3,7 @@ package aku;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.Before;
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.server.handler.ClickElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -23,14 +20,8 @@ public class ShoppingCartTest {
     private String email = "tkulaha@gmail.com";
     private String psw = "12345";
     boolean qchk = false;
-    //private int n = 0;
     private List <WebElement> items;
-    /*
-    private static ShoppingCartTest ourInstance = new ShoppingCartTest();
-
-    public static ShoppingCartTest getInstance() {
-        return ourInstance;
-    }*/
+    private List <WebElement> table_items;
 
     @Before
     public void start() {
@@ -43,10 +34,10 @@ public class ShoppingCartTest {
     @Test
     public void ShoppingCartTest () {
         Log_in_Test();
-        // add 3 products
-        Buy_Something();
-        Buy_Something();
-        Buy_Something();
+        // add 3 products to shopping cart
+        Buy_Product();
+        Buy_Product();
+        Buy_Product();
         //remove all products
         EmptyShoppingCart();
         Log_out_Test();
@@ -61,7 +52,7 @@ public class ShoppingCartTest {
         wait.until(titleIs("Online Store | My Store"));
     }
 
-    public void Buy_Something() {
+    public void Buy_Product() {
         //get number of items in shopping cart before buying
         int n = Integer.parseInt(driver.findElement(By.className("quantity")).getText());
         //buy something in the shop
@@ -86,60 +77,51 @@ public class ShoppingCartTest {
 
     public void EmptyShoppingCart() {
         int k = 0;
+        int n = 1;
         //go to the shopping cart
         driver.findElement(By.linkText("Checkout »")).click();
         wait.until(titleIs("Checkout | My Store"));
         //check if list of products is available
         try {
-        wait.until(visibilityOfElementLocated(By.className("shortcuts")));
-        //find and calculate all position. Note that 1 position can contain more than 1 item.
-        items = driver.findElements(By.className("shortcut"));
-        k = driver.findElements(By.className("shortcut")).size();
-        System.out.println("Number of positions to be deleted: " + k);
-        //delete items
-        for (int j = 0; j < (k-1); j++) {
-            wait.until(elementToBeClickable(By.className("shortcut")));
-            items = driver.findElements(By.className("shortcut"));
-            //delete the first position from the list
-            items.get(0).click();
-            driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
-            try {
-                wait.until(elementToBeClickable(By.xpath("//*[contains(@name, 'remove_cart_item')]"))).click();
-                System.out.println("Position " + (j + 1) + " deleted.");
-            } catch (NoSuchElementException ex1) {
-                if (driver.findElement(By.cssSelector("There are no positions in your cart.")).isDisplayed() == true) {
-                    System.out.println("No item(s) found.");
+            if (driver.findElement(By.className("shortcuts")).isDisplayed() == true) {
+                //find and calculate all position. Note that 1 position can contain more than 1 item
+                // positions displayed in shortcut
+                k = driver.findElements(By.className("shortcut")).size();
+                //positions from the final table
+                table_items = driver.findElements(By.xpath("//td[@class='item']"));
+                n = table_items.size();
+                if (n == k) {
+                    System.out.println("Number of positions to be deleted: " + k);
                 } else {
-                    System.out.println("Error appeared" + ex1.getAdditionalInformation());
+                    System.out.println("Error: number of lines in the table differs from the number of positions selected for buying: " + n + " and " + k);
+                }
+                //delete positions
+                for (int i = 0; i < (k - 1); i++) {
+                    items = driver.findElements(By.className("shortcut"));
+                    items.get(0).click();
+                    driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+                    wait.until(elementToBeClickable(By.xpath("//*[contains(@name,'remove_cart_item')]"))).click();
+                    driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+                    wait.until(visibilityOfAllElementsLocatedBy(By.xpath("//td[@class='item']")));
+                    System.out.println("Position " + (i + 1) + " deleted.");
+                    driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
                 }
             }
-            driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
-        }
-        } catch (NoSuchElementException ex2) {
-                if (driver.findElement(By.cssSelector("There are no positions in your cart.")).isDisplayed() == true) {
-                    System.out.println("No item(s) found.");
-                } else {
-                    System.out.println("Error appeared" + ex2.getAdditionalInformation());
-                }
-            }
-           //delete the last element (no 'shortcuts' view is displaying)
-            driver.findElement(By.className("fa-home")).click();
-            wait.until(titleIs("Online Store | My Store"));
-            driver.findElement(By.linkText("Checkout »")).click();
-            wait.until(titleIs("Checkout | My Store"));
-            try {
-            wait.until(elementToBeClickable(By.xpath("//*[contains(@name, 'remove_cart_item')]"))).click();
-            driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
-            System.out.println ("Position " + (k) + " deleted.");
-            wait.until(titleIs("Checkout | My Store"));
-            } catch (NoSuchElementException ex3) {
-            if (driver.findElement(By.cssSelector("There are no positions in your cart.")).isDisplayed() == true) {
-                System.out.println("No item(s) found.");
-            } else {
-                System.out.println("Error appeared" + ex3.getAdditionalInformation());
+        } catch (NoSuchElementException ex1) {
+            if (driver.findElement(By.tagName("EM")).getText().equalsIgnoreCase("There are no items in your cart.") == true) {
+                System.out.println("No item(s) found in shopping cart.");
+            } else {   //delete the only position (if 3 items are the same)
+                wait.until(elementToBeClickable(By.xpath("//*[contains(@name,'remove_cart_item')]"))).click();
+                driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+                wait.until(invisibilityOfAllElements(driver.findElements(By.xpath("//td[@class='item']"))));
+                System.out.println("Position " + n + " deleted.");
             }
         }
-        System.out.println("The shopping cart is empty.");
+        //delete the last position
+        wait.until(elementToBeClickable(By.xpath("//*[contains(@name, 'remove_cart_item')]"))).click();
+        driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+        wait.until(invisibilityOfAllElements(driver.findElements(By.xpath("//td[@class='item']"))));
+        System.out.println("Position " + n + " deleted.");
         // go back to home page
         driver.findElement(By.className("fa-home")).click();
         wait.until(titleIs("Online Store | My Store"));
@@ -149,6 +131,7 @@ public class ShoppingCartTest {
         driver.findElement(By.linkText("Logout")).click();
         wait.until(titleIs("Online Store | My Store"));
     }
+
 
     @After
     public void stop() {
